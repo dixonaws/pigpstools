@@ -8,7 +8,8 @@ print("Connected to " + serial0.portstr)
 
 mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 
-# we'll want to set the GPRMC key to the device's current position
+# we'll want to set the GPRMC key to the device's current position; right now we only care about these two keys
+# reference the NMEA sentence structure at http://www.gpsinformation.org/dale/nmea.htm#GGA
 mc.set("GPRMC", "Recommended Minimum Coordinates")
 mc.set("GPGGA", "Essential Fix Information")
 
@@ -30,12 +31,18 @@ while True:
 			# the first field of the NMEA Sentence is the data type
 			strGPSDataType=lstNMEASentence[0]
 
-			# store the sentence in memcached if we have a GPRMC sentence
+			# store the sentence in memcached with a key that matches the data type
 			if strGPSDataType=='$GPRMC':
-				mc.set("GPRMC", strSentence)
+				mc.set("GPRMC", strSentence) # recommended minimum data for gps
+			elif strGPSDataType=='$GPGGA':
+				mc.set("GPGGA", strSentence) # fix information
+			elif strGPSDataType=='$GPGSA':
+				mc.set("GPGSA", strSentence) # overall satellite data
+			elif strGPSDataType=='$GPVTG': 
+				mc.set("GPVTG", strSentence) # vector track and speed over the ground
 
 			sentence=[]
-			print mc.get("GPRMC")
+			
 			break
 
 serial0.close
